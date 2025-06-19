@@ -1,0 +1,50 @@
+{
+  "manifest_version": 3,
+  "name": "React Twinntax Vehicle Extension",
+  "version": "1.0",
+  "description": "Using this extension, accountant can automate the flow of getting vehicle details by filling plate number and chassis number",
+  "action": {
+    "default_popup": "index.html"
+  },
+  "permissions": [
+    "tabs",
+    "activeTab",
+    "scripting",
+    "storage",
+    "webNavigation",
+    "clipboardWrite"
+  ],
+  "background": {
+    "service_worker": "serviceWorker.js",
+    "type": "module"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://mobiforms.mobilit.fgov.be/link/myvehiclemyplate",
+        "https://*.twinntax.com:*/*",
+        "http://localhost:5173/"
+      ],
+      "js": ["content.js", "chooseLanguage.js"]
+    }
+  ],
+  "host_permissions": [
+    "https://mobiforms.mobilit.fgov.be/link/myvehiclemyplate",
+    "https://*.twinntax.com:*/*",
+    "http://localhost:5173/"
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "content.js",
+        "chooseLanguage.js"
+      ],
+      "matches": [
+        "<all_urls>"
+      ]
+    }
+  ],
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'self';"
+  }
+}
