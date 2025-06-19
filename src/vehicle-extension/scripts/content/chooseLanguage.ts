@@ -1,7 +1,7 @@
-// import {languageService} from "../../services/language.service.ts";
+import {languageService} from "../../services/language.service.ts";
 
 console.log("hii")
 
-// languageService.initialize().catch(error => {
-//     console.error('Language script failed:', error);
-// });
+languageService.initialize().catch(error => {
+    console.error('Language script failed:', error);
+});

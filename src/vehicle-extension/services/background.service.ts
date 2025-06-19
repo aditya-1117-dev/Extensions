@@ -1,11 +1,9 @@
-import {logger} from '../utils/logger.ts';
 import {ChromeTabUtils} from '../utils/chrome.utils.ts';
 import type {
     IBackgroundState,
     IChromeMessage,
     TMessageHandler, TMessage
 } from "../types/background";
-import {contentService} from "./content.service.ts";
 
 class BackgroundService {
     private state: IBackgroundState = {
@@ -19,7 +17,7 @@ class BackgroundService {
 
     constructor() {
         console.log("background sservice initialized");
-        this.initListeners();
+        // this.initListeners();
     }
 
     public initListeners() {
@@ -42,7 +40,7 @@ class BackgroundService {
     }
 
     private handleRuntimeMessage(request: IChromeMessage, sender: chrome.runtime.MessageSender, sendResponse: (response?: any) => void): boolean | void | Promise<boolean | void> {
-        logger.info(`Received message: ${request.type}`, request);
+        console.log(`Received message: ${request.type}`, request);
 
         const handlers: Record<TMessage, TMessageHandler> = {
             'init': this.handleInit.bind(this),
@@ -64,7 +62,7 @@ class BackgroundService {
     }
 
     private handleInit() {
-        logger.info("inside handleInit")
+        console.log("inside handleInit")
         this.state = {
             vehicleDataFromTwinntax: null,
             twinntaxTabId: null,
@@ -90,13 +88,14 @@ class BackgroundService {
         if (request.dataAccessKey === "vehicleDetails") {
             this.state.vehicleDataFromMobiformWebsite = resultToBeSaved;
         }
-        logger.info(`Stored data for key: ${request.dataAccessKey}`, resultToBeSaved);
+        console.log(`Stored data for key: ${request.dataAccessKey}`, resultToBeSaved);
     }
 
     private async handleGetLocalStorageData(request: IChromeMessage, _sender: chrome.runtime.MessageSender, sendResponse: (response?: any) => void) {
-        const result = await chrome.storage.local.get(request.key);
-        sendResponse(result);
-        return true;
+        chrome.storage.local.get(request.key, (res) => {
+            sendResponse(res)
+        })
+        return true
     }
 
     private async handleCloseTab(_request: IChromeMessage, _sender: chrome.runtime.MessageSender, sendResponse: (response?: any) => void) {
@@ -129,8 +128,10 @@ class BackgroundService {
 
     private async handleCheckPageRefresh(_request: IChromeMessage, _sender: chrome.runtime.MessageSender,
                                          sendResponse: (response?: any) => void) {
-        const result = await chrome.storage.local.get("continueAfterRefresh");
-        sendResponse(result.continueAfterRefresh);
+        chrome.storage.local.get("continueAfterRefresh", (res) => {
+            console.log(res)
+            sendResponse(res.continueAfterRefresh)
+        })
         return true;
     }
 
@@ -142,8 +143,10 @@ class BackgroundService {
     }
 
     private async handleCheckLanguageChange(_request: IChromeMessage, _sender: chrome.runtime.MessageSender, sendResponse: (response?: any) => void) {
-        const result = await chrome.storage.local.get("languageChange");
-        sendResponse(result.languageChange);
+        chrome.storage.local.get("languageChange", (res) => {
+            console.log(res, res.languageChange)
+            sendResponse(res.languageChange)
+        })
         return true;
     }
 
@@ -153,21 +156,17 @@ class BackgroundService {
     }
 
     private handleUnknownMessage(request: IChromeMessage) {
-        logger.log('Unknown message type received', request);
+        console.log('Unknown message type received', request);
     }
 
     private async assignContentScript(tabId: number) {
         try {
-            // await chrome.scripting.executeScript({
-            //     target: {tabId},
-            //     files: ["./content.js"]
-            // });
-            contentService.initialize()
-                .catch(error => {
-                    logger.error(`Content script initialization failed in tab-id : ${tabId}`, error);
-                });
+            await chrome.scripting.executeScript({
+                target: {tabId},
+                files: ["./content.js"]
+            });
         } catch (error) {
-            logger.error('Error injecting content script', error);
+            console.log('Error injecting content script', error);
         }
     }
 
@@ -186,7 +185,7 @@ class BackgroundService {
                 args: [response]
             });
         } catch (error) {
-            logger.error('Error showing result in Twinntax site', error);
+            console.log('Error showing result in Twinntax site', error);
         }
     }
 
@@ -202,7 +201,7 @@ class BackgroundService {
                 args: [error]
             });
         } catch (error) {
-            logger.error('Error showing alert in Twinntax site', error);
+            console.log('Error showing alert in Twinntax site', error);
         }
     }
 }

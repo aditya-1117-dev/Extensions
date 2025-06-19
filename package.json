@@ -5,7 +5,12 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build",
+    "build": "npm run clean && npm run build:popup && npm run build:content && npm run build:choose && npm run build:sw",
+    "clean": "rm -rf dist",
+    "build:popup": "vite build",
+    "build:content": "BUILD_TYPE=content-content vite build",
+    "build:choose": "BUILD_TYPE=content-chooseLanguage vite build",
+    "build:sw": "BUILD_TYPE=serviceWorker vite build",
     "lint": "eslint .",
     "preview": "vite preview"
   },

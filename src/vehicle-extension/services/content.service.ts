@@ -1,4 +1,3 @@
-import {logger} from '../utils/logger.ts';
 import {ChromeService} from './chrome.service.ts';
 import type {IMessages, IPageSelectors} from "../types/content";
 import type {IVehicleData} from "../types/chrome";
@@ -82,16 +81,6 @@ class ContentService {
         return specialChars.test(str);
     }
 
-    // private convertToCamelCase(value: string): string {
-    //     value = value.trim().replaceAll(':', '');
-    //     return value.split(' ').reduce((acc, cur) => {
-    //         if (!this.isSpecialChar(cur)) {
-    //             acc += (cur.substring(0, 1).toUpperCase() + cur.substring(1).toLowerCase());
-    //         }
-    //         return acc.substring(0, 1).toLowerCase() + acc.substring(1);
-    //     }, "");
-    // }
-
     private simulateHumanTyping(input: HTMLInputElement, value: string): void {
         input.focus();
         input.value = value;
@@ -111,7 +100,6 @@ class ContentService {
         return new Promise(resolve => setTimeout(resolve, ms));
     }
 
-    // Message Utilities
     private getAlertMessageAccordingToLanguage(alertMessageObject: AlertMessages): string {
         const browserDefaultLanguage = navigator.language.slice(0, 2);
         return alertMessageObject[browserDefaultLanguage as keyof AlertMessages] || alertMessageObject.en;
@@ -123,7 +111,7 @@ class ContentService {
     }
 
     private async storeData(key: string, result: any): Promise<void> {
-        logger.info(`Storing data for key: ${key}`, result);
+        console.log(`Storing data for key: ${key}`, result);
 
         if (key === "error") {
             await ChromeService.sendRuntimeMessage("closeTab", {data: {error: result}});
@@ -140,28 +128,24 @@ class ContentService {
         }
     }
 
-    // Main Functions
     public async initialize(): Promise<void> {
-        logger.info("Content script initialized");
+        console.log("Content script initialized");
 
         const languageChangeOrNot = await ChromeService.sendRuntimeMessage("checkLanguageChangeOrNot");
         await this.delay(2000);
 
         if (languageChangeOrNot) {
-            // this.waitForProgressBarCompletion(async () => {
-            //     await this.delay(3000);
-            //     await this.proceedFurtherAfterHeadingVisible();
-            // });
+
             waitForElements(
                 this.pageSelectors.progressBarSelector,
                 () => waitForProgressBarCompletion(
-                        this.pageSelectors.progressBarSelector,
-                        async () => {
-                            setTimeout(async () => {
-                                await this.proceedFurtherAfterHeadingVisible()
-                            }, 3000)
-                        }
-                    ),
+                    this.pageSelectors.progressBarSelector,
+                    async () => {
+                        setTimeout(async () => {
+                            await this.proceedFurtherAfterHeadingVisible()
+                        }, 3000)
+                    }
+                ),
                 false
             )
         } else {
@@ -260,85 +244,112 @@ class ContentService {
     }
 
     private async findCaptchaAndAlertTheUser(): Promise<void> {
-        const submitButtons = await this.waitForElements(this.pageSelectors.submitButtonSelector);
-        if (submitButtons.length < 2) {
-            const alertMessage = this.getAlertMessageAccordingToLanguage(this.fillTheCaptchaAlertMessage);
-            alert(alertMessage);
+        const submitButton = document.querySelectorAll(this.pageSelectors.submitButtonSelector)[1];
+        const alertMessage = this.getAlertMessageAccordingToLanguage(this.fillTheCaptchaAlertMessage)
+        console.log(submitButton)
+
+        if (!submitButton) {
+            await this.logAndStore("captcha find")
+            console.log("Captcha detected");
+            alert(alertMessage)
         }
     }
 
     private async findSubmitButtonAndClick(): Promise<boolean> {
         try {
-            const submitButtons = await this.waitForElements(
-                this.pageSelectors.submitButtonSelector
-            );
-            // { timeout: 60000 }
-            // 60 second timeout
+            const submitButton = document.querySelector<HTMLButtonElement>(this.pageSelectors.submitButtonSelector);
 
-            if (submitButtons.length === 0) {
+            await this.logAndStore("captcha filled")
+
+            if (!submitButton) {
+
                 for (let i = 0; i < 60; i++) {
-                    const submitButton = document.querySelector(this.pageSelectors.submitButtonSelector);
-                    if (submitButton) {
-                        await this.delay(2000);
-                        const resultButton = document.querySelector("#mxui_widget_Wrapper_18 > button");
+
+                    const submitButtonAppears = document.querySelector(this.pageSelectors.submitButtonSelector);
+                    console.log(i, submitButtonAppears, submitButtonAppears?.children, "pending")
+
+                    if (submitButtonAppears) {
+                        console.log("CAPTCHA solved");
+                        await this.delay(2000)
+
+                        const resultButton = document.querySelector<HTMLButtonElement>("#mxui_widget_Wrapper_18 > button")
                         if (resultButton) {
-                            (resultButton as HTMLElement).click();
-                            await this.logAndStore("submit button clicked");
-                            await this.delay(1000);
+                            resultButton.click()
+                            await this.logAndStore("submit button clicked")
+                            await this.delay(1000)
                             return true;
                         }
                     }
+
                     await this.delay(1000);
                 }
-                await this.storeData("error", "captcha is not solved on time");
-                return false;
+
+                await this.storeData("error", "captcha is not solved on time")
             } else {
-                (submitButtons[0] as HTMLElement).click();
-                return true;
+                submitButton.click();
+                return true
             }
+            return false
         } catch (error) {
-            logger.error("Failed to find/submit button", error);
+            console.log("Failed to find/submit button", error);
             return false;
         }
     }
 
     private async getResult(): Promise<boolean> {
+
         const {numberPlateNumber, chassisNumber} = await this.getVehicleData();
 
+        console.log(numberPlateNumber, chassisNumber);
+
+        let result;
+
         if (numberPlateNumber) {
-            const resultElement = await this.waitForElements(
-                this.pageSelectors.numberPlateResultSelector
-            );
-            const result = resultElement[0]?.textContent;
+            result = document.querySelector(this.pageSelectors.numberPlateResultSelector)
+        } else if (chassisNumber) {
+            result = document.querySelectorAll(this.pageSelectors.chassisNumberResultSelector).length
+        }
+
+        if (!result) {
+            await this.storeData("logs", "result is not getting")
+            return false
+        }
+
+        if (numberPlateNumber) {
+            const result = document.querySelector(this.pageSelectors.numberPlateResultSelector)?.textContent
 
             if (result) {
-                const dataFromResult = result.match(/\b\d{2}\/\d{2}\/\d{4}\b/g)?.[0];
-                await this.storeData("vehicleDetails", dataFromResult);
-                return true;
+                await this.logAndStore("result is get")
+                const match = result?.match(/\b\d{2}\/\d{2}\/\d{4}\b/g)
+                const dataFromResult = match ? match[0] : null;
+
+                console.log(dataFromResult)
+
+                await this.storeData("vehicleDetails", dataFromResult)
             }
+
         } else if (chassisNumber) {
-            const resultElements = await this.waitForElements(
-                this.pageSelectors.chassisNumberResultSelector
-            );
+            const result = Array.from(document.querySelectorAll(this.pageSelectors.chassisNumberResultSelector)).map((element) =>
+                [this.convertToCamelCase(element.textContent ?? ""),
+                    (element?.nextElementSibling?.textContent) ? element.nextElementSibling.textContent : ""])
 
-            if (resultElements.length) {
-                const result = Array.from(resultElements).map(element => [
-                    this.convertToCamelCase(element.textContent || ''),
-                    (element.nextElementSibling?.textContent || '').trim()
-                ]);
+            if (result.length && result[0].length) {
+                await this.logAndStore("result has some fields")
 
-                const resultObject = result.reduce((acc, [key, value]) => {
-                    if (key) acc[key] = value;
-                    return acc;
-                }, {} as Record<string, string>);
+                const resultObject: { [key: string]: string } = {}
 
-                await this.storeData("vehicleDetails", resultObject);
-                return true;
+                for (const item of result) {
+                    resultObject[item[0]] = item[1]?.trim()
+                }
+
+                console.log(resultObject)
+
+                await this.storeData("vehicleDetails", resultObject)
             }
         }
 
-        await this.storeData("logs", "result is not getting");
-        return false;
+        return true
+
     }
 
     private async copyDataToClipboardAndAskUserToFillDetails(): Promise<void> {
@@ -358,7 +369,7 @@ class ContentService {
         try {
             await navigator.clipboard.writeText(vehicleNumber);
         } catch (error) {
-            logger.error("Failed to copy to clipboard", error);
+            console.log("Failed to copy to clipboard", error);
         }
     }
 
@@ -399,7 +410,7 @@ class ContentService {
     }
 
     private async logAndStore(message: string): Promise<void> {
-        logger.info(message);
+        console.log(message);
         await this.storeData("logs", message);
     }
 }

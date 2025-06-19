@@ -1,7 +1,6 @@
 import React, { useState} from "react";
 import Button from "./Button.tsx";
 import {useLanguage} from "../hooks/useLanguage.tsx";
-import {logger} from "../utils/logger.ts";
 import {ChromeService} from "../services/chrome.service.ts";
 import {DomainUtils} from "../utils/domain.utils.ts";
 import {languageService} from "../services/language.service.ts";
@@ -17,14 +16,14 @@ const ScrapCarDetailsButton : React.FC = () => {
             const tab = await ChromeService.getActiveTab();
 
             if (!DomainUtils.isSupportedDomain(tab.url)) {
-                logger.log('Unsupported domain', tab.url);
+                console.log('Unsupported domain', tab.url);
                 return;
             }
 
             const vehicleData = await ChromeService.extractVehicleData(tab.id);
 
             if (!vehicleData || Object.keys(vehicleData).length === 0) {
-                logger.log('No vehicle data found');
+                console.log('No vehicle data found');
                 return;
             }
 
@@ -47,7 +46,7 @@ const ScrapCarDetailsButton : React.FC = () => {
             }
 
         }catch (error : unknown) {
-            logger.error("Error in scrap car details", error);
+            console.log("Error in scrap car details", error);
         }finally {
             setIsLoading(false);
         }

@@ -1,5 +1,4 @@
 import { MOBIFORMS_URL } from "../utils/constants.ts";
-import { logger } from "../utils/logger.ts";
 
 interface IExtractVehicleDataResult {
     numberPlateNumber?: string;
@@ -59,7 +58,7 @@ export const ChromeService = {
         try {
             return await chrome.runtime.sendMessage({ type, ...payload });
         } catch (error) {
-            logger.error(`Failed to send message: ${type}`, error);
+            console.log(`Failed to send message: ${type}`, error);
             throw error;
         }
     }
