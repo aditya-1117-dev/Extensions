@@ -1,9 +1,9 @@
 import React, { useState} from "react";
-import Button from "./Button";
-import {useLanguage} from "../hooks/useLanguage";
-import {logger} from "../utils/logger";
-import {ChromeService} from "../services/chrome.service";
-import {DomainUtils} from "../utils/domain.utils";
+import Button from "./Button.tsx";
+import {useLanguage} from "../hooks/useLanguage.tsx";
+import {logger} from "../utils/logger.ts";
+import {ChromeService} from "../services/chrome.service.ts";
+import {DomainUtils} from "../utils/domain.utils.ts";
 import {languageService} from "../services/language.service.ts";
 
 const ScrapCarDetailsButton : React.FC = () => {

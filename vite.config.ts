@@ -12,9 +12,9 @@ export default defineConfig({
     rollupOptions: {
       input: {
         popup: resolve(__dirname, 'index.html'),
-        content: resolve(__dirname, 'src/scripts/content/content.ts'),
-        chooseLanguage: resolve(__dirname, 'src/scripts/content/chooseLanguage.ts'),
-        serviceWorker: resolve(__dirname, 'src/scripts/serviceWorker/serviceWorker.ts'),
+        content: resolve(__dirname, 'src/vehicle-extension/scripts/content/content.ts'),
+        chooseLanguage: resolve(__dirname, 'src/vehicle-extension/scripts/content/chooseLanguage.ts'),
+        serviceWorker: resolve(__dirname, 'src/vehicle-extension/scripts/serviceWorker/serviceWorker.ts'),
       },
       output: {
         format: 'esm',

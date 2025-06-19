@@ -1,5 +1,5 @@
-import { backgroundService } from '../../services/background.service';
-import {logger} from "../../utils/logger";
+import { backgroundService } from '../../services/background.service.ts';
+import {logger} from "../../utils/logger.ts";
 
 console.log('Service Worker initialized');
 
