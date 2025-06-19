@@ -9,6 +9,7 @@ const __dirname = dirname(__filename)
 
 const buildType = process.env.BUILD_TYPE
 
+
 const sharedOutput = {
     entryFileNames: `[name].js`,
     chunkFileNames: `[name].js`,

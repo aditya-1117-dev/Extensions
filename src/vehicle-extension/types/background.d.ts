@@ -14,12 +14,6 @@ export interface IChromeMessage {
     [key: string]: any;
 }
 
-export type TMessageHandler = (
-    request: IChromeMessage,
-    sender: chrome.runtime.MessageSender,
-    sendResponse: (response?: any) => void
-) => boolean | void | Promise<boolean | void>;
-
 export type TMessage =
     | 'init'
     | 'vehicleDataFromTwinntax'

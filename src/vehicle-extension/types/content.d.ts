@@ -16,3 +16,10 @@ export interface IMessages {
     de: string;
     en: string;
 }
+
+interface IAlertMessages {
+    nl: string;
+    fr: string;
+    de: string;
+    en: string;
+}

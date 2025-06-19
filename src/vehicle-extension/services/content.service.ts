@@ -1,5 +1,5 @@
 import {ChromeService} from './chrome.service.ts';
-import type {IMessages, IPageSelectors} from "../types/content";
+import type {IAlertMessages, IMessages, IPageSelectors} from "../types/content";
 import type {IVehicleData} from "../types/chrome";
 import {waitForElements, waitForProgressBarCompletion} from "../utils/dom.utils.ts";
 
@@ -30,7 +30,6 @@ class ContentService {
         en: "Time out: Try again later..."
     };
 
-    // Fix the waitForElements method to properly return Element[]
     private async waitForElements(
         selector: string,
         options: { timeout?: number } = {}
@@ -71,7 +70,6 @@ class ContentService {
         }, "")
     }
 
-    // DOM Utilities
     private isVisible(element: HTMLElement | null): boolean {
         return !!(element?.offsetWidth || element?.offsetHeight || element?.getClientRects().length);
     }
@@ -100,9 +98,9 @@ class ContentService {
         return new Promise(resolve => setTimeout(resolve, ms));
     }
 
-    private getAlertMessageAccordingToLanguage(alertMessageObject: AlertMessages): string {
+    private getAlertMessageAccordingToLanguage(alertMessageObject: IAlertMessages): string {
         const browserDefaultLanguage = navigator.language.slice(0, 2);
-        return alertMessageObject[browserDefaultLanguage as keyof AlertMessages] || alertMessageObject.en;
+        return alertMessageObject[browserDefaultLanguage as keyof IAlertMessages] || alertMessageObject.en;
     }
 
     private async getVehicleData(): Promise<IVehicleData> {
@@ -154,50 +152,6 @@ class ContentService {
             }, 3000)
         }
     }
-
-    // private async waitForElements(
-    //     selector: string,
-    //     callback: (elements: Element[]) => void,
-    //     options: { timeout?: number } = {}
-    // ): Promise<void> {
-    //     return new Promise((resolve, reject) => {
-    //         const elements = document.querySelectorAll(selector);
-    //         if (elements.length) {
-    //             callback(Array.from(elements));
-    //             return resolve();
-    //         }
-    //
-    //         const timeout = options.timeout || 30000; // 30 seconds default timeout
-    //         const timeoutId = setTimeout(() => {
-    //             observer.disconnect();
-    //             reject(new Error(`Timeout waiting for elements: ${selector}`));
-    //         }, timeout);
-    //
-    //         const observer = new MutationObserver(() => {
-    //             const foundElements = document.querySelectorAll(selector);
-    //             if (foundElements.length) {
-    //                 clearTimeout(timeoutId);
-    //                 observer.disconnect();
-    //                 callback(Array.from(foundElements));
-    //                 resolve();
-    //             }
-    //         });
-    //
-    //         observer.observe(document.body, { childList: true, subtree: true });
-    //     });
-    // }
-
-    // private waitForProgressBarCompletion(callback: () => void): void {
-    //     const observer = new MutationObserver(() => {
-    //         const progressBar = document.querySelector(this.pageSelectors.progressBarSelector);
-    //         if (!progressBar) {
-    //             observer.disconnect();
-    //             callback();
-    //         }
-    //     });
-    //
-    //     observer.observe(document.body, {childList: true, subtree: true});
-    // }
 
     private async chooseNumberPlateNumberAndChassisNumberButtonAndFillData(): Promise<void> {
         const {numberPlateNumber, chassisNumber} = await this.getVehicleData();

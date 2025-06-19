@@ -64,19 +64,6 @@ export function simulateButtonClick(button: HTMLElement): void {
     button.click();
 }
 
-// export const waitForProgressBarCompletion = (callback: () => void): void => {
-//     const observer = new MutationObserver(() => {
-//         const el = document.querySelector(pageSelectors.progressBarSelector);
-//         if (!el) {
-//             console.log("Progress bar is complete", el);
-//             observer.disconnect();
-//             callback();
-//         }
-//     });
-//
-//     observer.observe(document.body, { childList: true, subtree: true });
-// }
-
 export function waitForProgressBarCompletion(selector: string, callback: () => void): void {
     const observer = new MutationObserver(() => {
         const progressBar = document.querySelector(selector);

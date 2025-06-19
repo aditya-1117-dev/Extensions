@@ -2,7 +2,7 @@ import {ChromeTabUtils} from '../utils/chrome.utils.ts';
 import type {
     IBackgroundState,
     IChromeMessage,
-    TMessageHandler, TMessage
+    TMessage
 } from "../types/background";
 
 class BackgroundService {
@@ -17,51 +17,9 @@ class BackgroundService {
 
     constructor() {
         console.log("background sservice initialized");
-        // this.initListeners();
     }
 
-    public initListeners() {
-        chrome.tabs.onUpdated.addListener(this.handleTabUpdated.bind(this));
-        chrome.runtime.onMessage.addListener(this.handleRuntimeMessage.bind(this));
-    }
-
-    private async handleTabUpdated(tabId: number, info: chrome.tabs.TabChangeInfo) {
-        this.state.mobiformTabId = tabId;
-
-        if (info.status === 'complete') {
-            if (this.state.languageChangePageRefresh) {
-                this.state.languageChangePageRefresh = false;
-                await this.assignContentScript(tabId);
-            } else if (this.state.pageRefresh) {
-                this.state.pageRefresh = false;
-                await this.assignContentScript(tabId);
-            }
-        }
-    }
-
-    private handleRuntimeMessage(request: IChromeMessage, sender: chrome.runtime.MessageSender, sendResponse: (response?: any) => void): boolean | void | Promise<boolean | void> {
-        console.log(`Received message: ${request.type}`, request);
-
-        const handlers: Record<TMessage, TMessageHandler> = {
-            'init': this.handleInit.bind(this),
-            'vehicleDataFromTwinntax': this.handleVehicleDataFromTwinntax.bind(this),
-            'getVehicleNumber': this.handleGetVehicleNumber.bind(this),
-            'storeData': this.handleStoreData.bind(this),
-            'logs': this.handleStoreData.bind(this),
-            'getLocalStorageData': this.handleGetLocalStorageData.bind(this),
-            'closeTab': this.handleCloseTab.bind(this),
-            'pageRefresh': this.handlePageRefresh.bind(this),
-            'checkPageRefreshOrNot': this.handleCheckPageRefresh.bind(this),
-            'changeLanguage': this.handleChangeLanguage.bind(this),
-            'checkLanguageChangeOrNot': this.handleCheckLanguageChange.bind(this),
-            'noChangeInLanguage': this.handleNoLanguageChange.bind(this)
-        };
-
-        const handler = handlers[request.type as TMessage] || this.handleUnknownMessage.bind(this);
-        return handler(request, sender, sendResponse);
-    }
-
-    private handleInit() {
+    private initBackground() {
         console.log("inside handleInit")
         this.state = {
             vehicleDataFromTwinntax: null,
@@ -73,17 +31,33 @@ class BackgroundService {
         };
     }
 
-    private handleVehicleDataFromTwinntax(request: IChromeMessage) {
+    public initListeners() {
+        chrome.tabs.onUpdated.addListener(async (tabId : number, info : chrome.tabs.TabChangeInfo) => {
+            await this.executeScriptAfterPageRefresh(tabId, info)
+        });
+        chrome.runtime.onMessage.addListener(this.handleRuntimeMessage.bind(this));
+    }
+
+    private async executeScriptAfterPageRefresh(tabId: number, info: chrome.tabs.TabChangeInfo) {
+        this.state.mobiformTabId = tabId;
+
+        if (info.status === 'complete') {
+            if (this.state.languageChangePageRefresh) {
+                this.state.languageChangePageRefresh = false;
+                await this.assignScript(tabId);
+            } else if (this.state.pageRefresh) {
+                this.state.pageRefresh = false;
+                await this.assignScript(tabId);
+            }
+        }
+    }
+
+    private twinntaxTabIdAndTwinntaxData(request: IChromeMessage) {
         this.state.vehicleDataFromTwinntax = request.vehicleDataFromTwinntax;
         this.state.twinntaxTabId = request.twinntaxTabId;
     }
 
-    private handleGetVehicleNumber(_request: IChromeMessage, _sender: chrome.runtime.MessageSender, sendResponse: (response?: any) => void) {
-        sendResponse({data: this.state.vehicleDataFromTwinntax});
-        return true;
-    }
-
-    private handleStoreData(request: IChromeMessage) {
+    private storeDataAndLogs(request: IChromeMessage) {
         const resultToBeSaved = request[request.dataAccessKey];
         if (request.dataAccessKey === "vehicleDetails") {
             this.state.vehicleDataFromMobiformWebsite = resultToBeSaved;
@@ -91,75 +65,7 @@ class BackgroundService {
         console.log(`Stored data for key: ${request.dataAccessKey}`, resultToBeSaved);
     }
 
-    private async handleGetLocalStorageData(request: IChromeMessage, _sender: chrome.runtime.MessageSender, sendResponse: (response?: any) => void) {
-        chrome.storage.local.get(request.key, (res) => {
-            sendResponse(res)
-        })
-        return true
-    }
-
-    private async handleCloseTab(_request: IChromeMessage, _sender: chrome.runtime.MessageSender, sendResponse: (response?: any) => void) {
-        if (!this.state.twinntaxTabId || !this.state.mobiformTabId) {
-            sendResponse({success: false, error: 'Invalid tab IDs'});
-            return;
-        }
-
-        await ChromeTabUtils.activateTab(this.state.twinntaxTabId);
-
-        if (this.state.vehicleDataFromMobiformWebsite) {
-            await this.showResultInTwinntaxSite(this.state.vehicleDataFromMobiformWebsite);
-        } else {
-            await this.showAlertInTwinntaxSite("Error: Result not available. Please try again later.");
-        }
-
-        // const result = this.state.vehicleDataFromMobiformWebsite || request.data;
-
-        await ChromeTabUtils.removeTab(this.state.mobiformTabId, sendResponse);
-        return true;
-    }
-
-    private async handlePageRefresh() {
-        if (!this.state.mobiformTabId) return;
-
-        this.state.pageRefresh = true;
-        await chrome.storage.local.set({"continueAfterRefresh": "true"});
-        await chrome.tabs.reload(this.state.mobiformTabId);
-    }
-
-    private async handleCheckPageRefresh(_request: IChromeMessage, _sender: chrome.runtime.MessageSender,
-                                         sendResponse: (response?: any) => void) {
-        chrome.storage.local.get("continueAfterRefresh", (res) => {
-            console.log(res)
-            sendResponse(res.continueAfterRefresh)
-        })
-        return true;
-    }
-
-    private async handleChangeLanguage() {
-        // if (!this.state.mobiformTabId) return;
-
-        this.state.languageChangePageRefresh = true;
-        await chrome.storage.local.set({"languageChange": "true"});
-    }
-
-    private async handleCheckLanguageChange(_request: IChromeMessage, _sender: chrome.runtime.MessageSender, sendResponse: (response?: any) => void) {
-        chrome.storage.local.get("languageChange", (res) => {
-            console.log(res, res.languageChange)
-            sendResponse(res.languageChange)
-        })
-        return true;
-    }
-
-    private async handleNoLanguageChange() {
-        if (!this.state.mobiformTabId) return;
-        await this.assignContentScript(this.state.mobiformTabId);
-    }
-
-    private handleUnknownMessage(request: IChromeMessage) {
-        console.log('Unknown message type received', request);
-    }
-
-    private async assignContentScript(tabId: number) {
+    private async assignScript(tabId: number) {
         try {
             await chrome.scripting.executeScript({
                 target: {tabId},
@@ -203,6 +109,131 @@ class BackgroundService {
         } catch (error) {
             console.log('Error showing alert in Twinntax site', error);
         }
+    }
+
+    private async pageRefreshAndSavedToLocalStorageAccordingToTabId() {
+        if (!this.state.mobiformTabId) return;
+
+        this.state.pageRefresh = true;
+        await chrome.storage.local.set({"continueAfterRefresh": "true"});
+        await chrome.tabs.reload(this.state.mobiformTabId);
+    }
+
+    private async checkPageRefreshOrNot(sendResponse: (response?: any) => void) {
+        chrome.storage.local.get("continueAfterRefresh", (res) => {
+            console.log(res)
+            sendResponse(res.continueAfterRefresh)
+        })
+        return true;
+    }
+
+    private async changeLanguageAndSavedToLocalStorageAccordingToTabId() {
+        // if (!this.state.mobiformTabId) return;
+
+        this.state.languageChangePageRefresh = true;
+        await chrome.storage.local.set({"languageChange": "true"});
+    }
+
+    private async checkLanguageChangeOrNot( sendResponse: (response?: any) => void) {
+        chrome.storage.local.get("languageChange", (res) => {
+            console.log(res, res.languageChange)
+            sendResponse(res.languageChange)
+        })
+        return true;
+    }
+
+    private handleRuntimeMessage(request: IChromeMessage, _sender: chrome.runtime.MessageSender, sendResponse: (response?: any) => void): boolean | void | Promise<boolean | void> {
+        console.log(`Received message: ${request.type}`, request);
+
+        switch (request.type as TMessage) {
+            case "init":
+                this.initBackground();
+                break;
+
+            case "vehicleDataFromTwinntax":
+                this.twinntaxTabIdAndTwinntaxData(request);
+                break;
+
+            case "getVehicleNumber":
+                this.handleGetVehicleNumber(sendResponse);
+                break;
+
+            case "storeData":
+            case "logs":
+                this.storeDataAndLogs(request);
+                break;
+
+            case "getLocalStorageData":
+                this.getLocalStorageData(request, sendResponse);
+                break;
+
+            case "closeTab":
+                this.closeTab( sendResponse);
+                break;
+
+            case "pageRefresh":
+                this.pageRefreshAndSavedToLocalStorageAccordingToTabId();
+                break;
+
+            case "checkPageRefreshOrNot":
+                this.checkPageRefreshOrNot(sendResponse);
+                break;
+
+            case "changeLanguage":
+                this.changeLanguageAndSavedToLocalStorageAccordingToTabId();
+                break;
+
+            case "checkLanguageChangeOrNot":
+                this.checkLanguageChangeOrNot(sendResponse);
+                return true;
+
+            case "noChangeInLanguage":
+                this.noLanguageChange();
+                break;
+            default:
+                this.handleUnknownMessage(request);
+        }
+    }
+
+    private handleGetVehicleNumber(sendResponse: (response?: any) => void) {
+        sendResponse({data: this.state.vehicleDataFromTwinntax});
+        return true;
+    }
+
+    private async getLocalStorageData(request: IChromeMessage, sendResponse: (response?: any) => void) {
+        chrome.storage.local.get(request.key, (res) => {
+            sendResponse(res)
+        })
+        return true
+    }
+
+    private async closeTab(sendResponse: (response?: any) => void) {
+        if (!this.state.twinntaxTabId || !this.state.mobiformTabId) {
+            sendResponse({success: false, error: 'Invalid tab IDs'});
+            return;
+        }
+
+        await ChromeTabUtils.activateTab(this.state.twinntaxTabId);
+
+        if (this.state.vehicleDataFromMobiformWebsite) {
+            await this.showResultInTwinntaxSite(this.state.vehicleDataFromMobiformWebsite);
+        } else {
+            await this.showAlertInTwinntaxSite("Error: Result not available. Please try again later.");
+        }
+
+        // const result = this.state.vehicleDataFromMobiformWebsite || request.data;
+
+        await ChromeTabUtils.removeTab(this.state.mobiformTabId, sendResponse);
+        return true;
+    }
+
+    private async noLanguageChange() {
+        if (!this.state.mobiformTabId) return;
+        await this.assignScript(this.state.mobiformTabId);
+    }
+
+    private handleUnknownMessage(request: IChromeMessage) {
+        console.log('Unknown message type received', request);
     }
 }
 
