@@ -3,7 +3,6 @@ import Button from "./Button.tsx";
 import {useLanguage} from "../hooks/useLanguage.tsx";
 import {ChromeService} from "../services/chrome.service.ts";
 import {DomainUtils} from "../utils/domain.utils.ts";
-import {languageService} from "../services/language.service.ts";
 
 const ScrapCarDetailsButton : React.FC = () => {
     const [isLoading, setIsLoading] = useState<boolean>(false);
@@ -39,10 +38,7 @@ const ScrapCarDetailsButton : React.FC = () => {
             const newWindow = await ChromeService.openMobiformWindow();
 
             if (newWindow.tabs?.[0]?.id) {
-                // await ChromeService.injectScript(newWindow.tabs[0].id, "./chooseLanguage.js");
-                languageService.initialize().catch(error => {
-                    console.error('Language script failed:', error);
-                });
+                await ChromeService.injectScript(newWindow.tabs[0].id, "./chooseLanguage.js");
             }
 
         }catch (error : unknown) {
