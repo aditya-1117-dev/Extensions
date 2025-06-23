@@ -22,7 +22,7 @@
     {
       "matches": [
         "https://mobiforms.mobilit.fgov.be/link/myvehiclemyplate",
-        "https://*.twinntax.com:*/*",
+        "https://*.twinntax.com:*/accountant-companies/overview/QEVYXFZM",
         "http://localhost:5173/"
       ],
       "js": ["content.js", "chooseLanguage.js"]
@@ -30,7 +30,7 @@
   ],
   "host_permissions": [
     "https://mobiforms.mobilit.fgov.be/link/myvehiclemyplate",
-    "https://*.twinntax.com:*/*",
+    "https://*.twinntax.com:*/accountant-companies/overview/QEVYXFZM",
     "http://localhost:5173/"
   ],
   "web_accessible_resources": [

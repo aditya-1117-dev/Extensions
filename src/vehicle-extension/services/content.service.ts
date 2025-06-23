@@ -308,9 +308,9 @@ class ContentService {
 
         const askUserToFillDetailsAlertMessage = {
             nl: `Uw voertuignummer: ${vehicleNumber} gekopieerd naar uw klembord. Probeer de gegevens handmatig in te vullen door uw voertuignummer in het invoerveld te gebruiken.`,
-            fr: `Votre numéro de véhicule : ${vehicleNumber} copié dans votre presse-papiers, Veuillez essayer de remplir les détails manuellement en utilisant votre numéro de véhicule dans la saisie`,
+            fr: `Votre numéro de véhicule : ${vehicleNumber} copié dans votre presse-papiers, Veuillez essayer de remplir les détails manuellement en utilisant votre numéro de véhicule dans la saisie.`,
             de: `Ihre Fahrzeugnummer: ${vehicleNumber} wurde in Ihre Zwischenablage kopiert. Bitte versuchen Sie, die Angaben manuell einzugeben, indem Sie Ihre Fahrzeugnummer in das Eingabefeld eingeben.`,
-            en: `Your vehicle number: ${vehicleNumber} copied to your clipboard, Please try to fill the details manually by using your vehicle number in the input`
+            en: `Your vehicle number: ${vehicleNumber} copied to your clipboard, Please try to fill the details manually by using your vehicle number in the input.`
         };
 
         const alertMessage = this.getAlertMessageAccordingToLanguage(askUserToFillDetailsAlertMessage);

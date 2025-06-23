@@ -1,8 +1,8 @@
 export const SUPPORTED_DOMAINS: string[] = [
-    "https://app.twinntax.com",
-    "https://app.dev.twinntax.com/",
-    "https://app.demo.twinntax.com",
-    "https://app.staging.twinntax.com",
+    "https://app.twinntax.com/accountant-companies/overview/QEVYXFZM",
+    "https://app.dev.twinntax.com/accountant-companies/overview/QEVYXFZM",
+    "https://app.demo.twinntax.com/accountant-companies/overview/QEVYXFZM",
+    "https://app.staging.twinntax.com/accountant-companies/overview/QEVYXFZM",
     "https://app.dev.twinntax.com/accountant-companies/overview/QEVYXFZM",
     "http://localhost:5173/"
 ];
