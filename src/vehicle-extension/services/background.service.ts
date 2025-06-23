@@ -119,12 +119,11 @@ class BackgroundService {
         await chrome.tabs.reload(this.state.mobiformTabId);
     }
 
-    private async checkPageRefreshOrNot(sendResponse: (response?: any) => void) {
+    private checkPageRefreshOrNot(sendResponse: (response?: any) => void) {
         chrome.storage.local.get("continueAfterRefresh", (res) => {
             console.log(res)
             sendResponse(res.continueAfterRefresh)
         })
-        return true;
     }
 
     private async changeLanguageAndSavedToLocalStorageAccordingToTabId() {
@@ -134,12 +133,11 @@ class BackgroundService {
         await chrome.storage.local.set({"languageChange": "true"});
     }
 
-    private async checkLanguageChangeOrNot( sendResponse: (response?: any) => void) {
+    private checkLanguageChangeOrNot( sendResponse: (response?: any) => void) {
         chrome.storage.local.get("languageChange", (res) => {
             console.log(res, res.languageChange)
             sendResponse(res.languageChange)
         })
-        return true;
     }
 
     private handleRuntimeMessage(request: IChromeMessage, _sender: chrome.runtime.MessageSender, sendResponse: (response?: any) => void): boolean | void | Promise<boolean | void> {
@@ -156,7 +154,7 @@ class BackgroundService {
 
             case "getVehicleNumber":
                 this.handleGetVehicleNumber(sendResponse);
-                break;
+                return true;
 
             case "storeData":
             case "logs":
@@ -165,10 +163,10 @@ class BackgroundService {
 
             case "getLocalStorageData":
                 this.getLocalStorageData(request, sendResponse);
-                break;
+                return true;
 
             case "closeTab":
-                this.closeTab( sendResponse);
+                this.closeTab(sendResponse);
                 break;
 
             case "pageRefresh":
@@ -177,7 +175,7 @@ class BackgroundService {
 
             case "checkPageRefreshOrNot":
                 this.checkPageRefreshOrNot(sendResponse);
-                break;
+                return true
 
             case "changeLanguage":
                 this.changeLanguageAndSavedToLocalStorageAccordingToTabId();
@@ -190,21 +188,21 @@ class BackgroundService {
             case "noChangeInLanguage":
                 this.noLanguageChange();
                 break;
+
             default:
                 this.handleUnknownMessage(request);
+                break;
         }
     }
 
     private handleGetVehicleNumber(sendResponse: (response?: any) => void) {
         sendResponse({data: this.state.vehicleDataFromTwinntax});
-        return true;
     }
 
-    private async getLocalStorageData(request: IChromeMessage, sendResponse: (response?: any) => void) {
+    private getLocalStorageData(request: IChromeMessage, sendResponse: (response?: any) => void) {
         chrome.storage.local.get(request.key, (res) => {
             sendResponse(res)
         })
-        return true
     }
 
     private async closeTab(sendResponse: (response?: any) => void) {
@@ -224,7 +222,6 @@ class BackgroundService {
         // const result = this.state.vehicleDataFromMobiformWebsite || request.data;
 
         await ChromeTabUtils.removeTab(this.state.mobiformTabId, sendResponse);
-        return true;
     }
 
     private async noLanguageChange() {

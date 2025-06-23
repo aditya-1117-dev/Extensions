@@ -2,13 +2,6 @@ export function delay (ms: number): Promise<void> {
     return new Promise(resolve => setTimeout(resolve, ms));
 }
 
-
-export function isVisible (element: Element | null): boolean {
-    console.log(element);
-    return true;
-    // return !!(element && (element as HTMLElement).offsetHeight || element?.getClientRects().length);
-}
-
 export function waitForElements  (
     selector: string,
     callback: () => void,

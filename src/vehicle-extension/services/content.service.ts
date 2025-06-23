@@ -30,6 +30,98 @@ class ContentService {
         en: "Time out: Try again later..."
     };
 
+    private isVisible(element: HTMLElement | null): boolean {
+        return !!(element?.offsetWidth || element?.offsetHeight || element?.getClientRects().length);
+    }
+
+    private isSpecialChar(str: string): boolean {
+        const specialChars = /[`!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?~]/;
+        return specialChars.test(str);
+    }
+
+    private convertToCamelCase(value: string): string {
+        value = value.trim()
+        // value = (value as String).replaceAll(':', '')
+        value = value.replace(/:/g, '');
+
+        return value.split(' ').reduce((acc, cur) => {
+            if (!this.isSpecialChar(cur)) {
+                acc += (cur.substring(0, 1).toUpperCase() + cur.substring(1).toLowerCase())
+            }
+            return acc.substring(0, 1).toLowerCase() + acc.substring(1)
+        }, "")
+    }
+
+    /*
+    * functions: simulateHumanTyping, simulateButtonClick
+    * Below functions are worked like human action, it has to be that way because sometimes website caught automate actions.
+    * */
+    private simulateHumanTyping(input: HTMLInputElement, value: string): void {
+        input.focus();
+        input.value = value;
+        input.dispatchEvent(new Event("input", {bubbles: true}));
+        input.dispatchEvent(new Event("change", {bubbles: true}));
+        input.blur();
+    }
+
+    private simulateButtonClick(button: HTMLElement): void {
+        button.dispatchEvent(new MouseEvent("mouseover", {bubbles: true}));
+        button.dispatchEvent(new MouseEvent("mousedown", {bubbles: true}));
+        button.dispatchEvent(new MouseEvent("mouseup", {bubbles: true}));
+        button.click();
+    }
+
+    private delay(ms: number): Promise<void> {
+        return new Promise(resolve => setTimeout(resolve, ms));
+    }
+
+    private async logAndStore(message: string): Promise<void> {
+        console.log(message);
+        await this.storeData("logs", message);
+    }
+
+    /*
+    * This function helps user to copy its data, after this manual flow will run
+    * */
+    private async copyDataToClipboard(vehicleNumber: string) {
+        try {
+            await navigator.clipboard.writeText(vehicleNumber);
+        } catch (error) {
+            console.log("Failed to copy to clipboard", error);
+        }
+    }
+
+    private getAlertMessageAccordingToLanguage(alertMessageObject: IAlertMessages): string {
+        const browserDefaultLanguage = navigator.language.slice(0, 2);
+        return alertMessageObject[browserDefaultLanguage as keyof IAlertMessages] || alertMessageObject.en;
+    }
+
+    private async getVehicleData(): Promise<IVehicleData> {
+        return (await ChromeService.sendRuntimeMessage("getVehicleNumber")).data;
+    }
+
+    private async storeData(key: string, result: any): Promise<void> {
+        console.log(`Storing data for key: ${key}`, result);
+
+        if (key === "error") {
+            await ChromeService.sendRuntimeMessage("closeTab", {data: {error: result}});
+            return;
+        }
+
+        await ChromeService.sendRuntimeMessage(key === "logs" ? "logs" : "storeData", {
+            dataAccessKey: key,
+            [key]: result
+        });
+
+        if (key === "vehicleDetails" && result && Object.keys(result).length > 0) {
+            await ChromeService.sendRuntimeMessage("closeTab");
+        }
+    }
+
+    private async pageRefresh() {
+        await ChromeService.sendRuntimeMessage("pageRefresh");
+    }
+
     private async waitForElements(
         selector: string,
         options: { timeout?: number } = {}
@@ -55,102 +147,6 @@ class ContentService {
 
             observer.observe(document.body, {childList: true, subtree: true});
         });
-    }
-
-    private convertToCamelCase(value: string): string {
-        value = value.trim()
-        // value = (value as String).replaceAll(':', '')
-        value = value.replace(/:/g, '');
-
-        return value.split(' ').reduce((acc, cur) => {
-            if (!this.isSpecialChar(cur)) {
-                acc += (cur.substring(0, 1).toUpperCase() + cur.substring(1).toLowerCase())
-            }
-            return acc.substring(0, 1).toLowerCase() + acc.substring(1)
-        }, "")
-    }
-
-    private isVisible(element: HTMLElement | null): boolean {
-        return !!(element?.offsetWidth || element?.offsetHeight || element?.getClientRects().length);
-    }
-
-    private isSpecialChar(str: string): boolean {
-        const specialChars = /[`!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?~]/;
-        return specialChars.test(str);
-    }
-
-    private simulateHumanTyping(input: HTMLInputElement, value: string): void {
-        input.focus();
-        input.value = value;
-        input.dispatchEvent(new Event("input", {bubbles: true}));
-        input.dispatchEvent(new Event("change", {bubbles: true}));
-        input.blur();
-    }
-
-    private simulateButtonClick(button: HTMLElement): void {
-        button.dispatchEvent(new MouseEvent("mouseover", {bubbles: true}));
-        button.dispatchEvent(new MouseEvent("mousedown", {bubbles: true}));
-        button.dispatchEvent(new MouseEvent("mouseup", {bubbles: true}));
-        button.click();
-    }
-
-    private delay(ms: number): Promise<void> {
-        return new Promise(resolve => setTimeout(resolve, ms));
-    }
-
-    private getAlertMessageAccordingToLanguage(alertMessageObject: IAlertMessages): string {
-        const browserDefaultLanguage = navigator.language.slice(0, 2);
-        return alertMessageObject[browserDefaultLanguage as keyof IAlertMessages] || alertMessageObject.en;
-    }
-
-    private async getVehicleData(): Promise<IVehicleData> {
-        const response = await ChromeService.sendRuntimeMessage("getVehicleNumber");
-        return response.data;
-    }
-
-    private async storeData(key: string, result: any): Promise<void> {
-        console.log(`Storing data for key: ${key}`, result);
-
-        if (key === "error") {
-            await ChromeService.sendRuntimeMessage("closeTab", {data: {error: result}});
-            return;
-        }
-
-        await ChromeService.sendRuntimeMessage(key === "logs" ? "logs" : "storeData", {
-            dataAccessKey: key,
-            [key]: result
-        });
-
-        if (key === "vehicleDetails" && result && Object.keys(result).length > 0) {
-            await ChromeService.sendRuntimeMessage("closeTab");
-        }
-    }
-
-    public async initialize(): Promise<void> {
-        console.log("Content script initialized");
-
-        const languageChangeOrNot = await ChromeService.sendRuntimeMessage("checkLanguageChangeOrNot");
-        await this.delay(2000);
-
-        if (languageChangeOrNot) {
-
-            waitForElements(
-                this.pageSelectors.progressBarSelector,
-                () => waitForProgressBarCompletion(
-                    this.pageSelectors.progressBarSelector,
-                    async () => {
-                        setTimeout(async () => {
-                            await this.proceedFurtherAfterHeadingVisible()
-                        }, 3000)
-                    }
-                ),
-                false
-            )
-        } else {
-            setTimeout(async () => {
-                await this.proceedFurtherAfterHeadingVisible();
-            }, 3000)
-        }
     }
 
     private async chooseNumberPlateNumberAndChassisNumberButtonAndFillData(): Promise<void> {
@@ -302,7 +298,7 @@ class ContentService {
             }
         }
 
-        return true
+        return false
 
     }
 
@@ -320,11 +316,16 @@ class ContentService {
         const alertMessage = this.getAlertMessageAccordingToLanguage(askUserToFillDetailsAlertMessage);
         alert(alertMessage);
 
-        try {
-            await navigator.clipboard.writeText(vehicleNumber);
-        } catch (error) {
-            console.log("Failed to copy to clipboard", error);
-        }
+        await this.copyDataToClipboard(vehicleNumber)
+    }
+
+    private showCaptchaTimeoutAlert() {
+        const alertMessage = this.getAlertMessageAccordingToLanguage(this.captchaTimeoutAlertMessage);
+        alert(alertMessage);
+    }
+
+    private async closeTabWithAlert() {
+        await ChromeService.sendRuntimeMessage("closeTab")
     }
 
     private async proceedFurtherAfterHeadingVisible(): Promise<void> {
@@ -339,7 +340,7 @@ class ContentService {
                 await this.delay(2000);
                 const resultAppearOrNot = await this.getResult();
                 if (!resultAppearOrNot) {
-                    await ChromeService.sendRuntimeMessage("closeTab");
+                    await this.closeTabWithAlert();
                 }
             }
         } else {
@@ -349,23 +350,44 @@ class ContentService {
 
             const captchaFilledOrNot = await this.findSubmitButtonAndClick();
             if (!captchaFilledOrNot) {
-                const alertMessage = this.getAlertMessageAccordingToLanguage(this.captchaTimeoutAlertMessage);
-                alert(alertMessage);
-                await ChromeService.sendRuntimeMessage("pageRefresh");
+                this.showCaptchaTimeoutAlert()
+                await this.pageRefresh();
             } else {
                 await this.delay(2000);
                 const resultAppearOrNot = await this.getResult();
                 if (!resultAppearOrNot) {
                     await this.copyDataToClipboardAndAskUserToFillDetails();
-                    await ChromeService.sendRuntimeMessage("pageRefresh");
+                    await this.pageRefresh();
                 }
             }
         }
     }
 
-    private async logAndStore(message: string): Promise<void> {
-        console.log(message);
-        await this.storeData("logs", message);
+    public async initialize(): Promise<void> {
+        console.log("Content script initialized");
+
+        const languageChangeOrNot = await ChromeService.sendRuntimeMessage("checkLanguageChangeOrNot");
+        await this.delay(2000);
+
+        if (languageChangeOrNot) {
+
+            waitForElements(
+                this.pageSelectors.progressBarSelector,
+                () => waitForProgressBarCompletion(
+                    this.pageSelectors.progressBarSelector,
+                    async () => {
+                        setTimeout(async () => {
+                            await this.proceedFurtherAfterHeadingVisible()
+                        }, 3000)
+                    }
+                ),
+                false
+            )
+        } else {
+            setTimeout(async () => {
+                await this.proceedFurtherAfterHeadingVisible();
+            }, 3000)
+        }
     }
 }
 
