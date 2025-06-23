@@ -298,7 +298,7 @@ class ContentService {
             }
         }
 
-        return false
+        return true
 
     }
 
