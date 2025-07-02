@@ -1,13 +1,14 @@
 export interface IPageSelectors {
     progressBarSelector: string;
-    licensePlateNumberAndChassisNumberRadioButtonSelector: string;
-    licensePlateNumberTextFieldSelector: string;
+    vehiclePlateNumberAndChassisNumberRadioButtonSelector: string;
+    vehiclePlateNumberTextFieldSelector: string;
     chassisNumberTextFieldSelector: string;
     submitButtonSelector: string;
     headingSelector: string;
     chassisNumberResultSelector: string;
     numberPlateResultSelector: string;
     languageSelection: string;
+    dateSelector: string;
 }
 
 export interface IMessages {
@@ -17,7 +18,7 @@ export interface IMessages {
     en: string;
 }
 
-interface IAlertMessages {
+export interface IAlertMessages {
     nl: string;
     fr: string;
     de: string;
