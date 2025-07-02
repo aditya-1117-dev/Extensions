@@ -1,8 +1,8 @@
 import { MOBIFORMS_URL } from "../utils/constants.ts";
 
 interface IExtractVehicleDataResult {
-    numberPlateNumber?: string;
-    chassisNumber?: string;
+    numberPlateNumber: string;
+    chassisNumber: string;
 }
 
 export const ChromeService = {
@@ -17,21 +17,20 @@ export const ChromeService = {
 
         const [result] = await chrome.scripting.executeScript({
             target: { tabId },
-            func: (): IExtractVehicleDataResult => {
-                const numberPlateInput = document.getElementById("vehicle-plate-number") as HTMLInputElement | null;
-                const chassisNumberInput = document.getElementById("vehicle-chassis-number") as HTMLInputElement | null;
-                const outputEl = document.getElementById("output");
+            func: (): IExtractVehicleDataResult | null => {
+                const numberPlateInput = document.querySelectorAll<HTMLInputElement>("div.input-group > input[id='carConfiguration.numberPlate']")[0]?.value.trim();
+                const chassisNumberInput = document.querySelectorAll<HTMLInputElement>("div.input-group > input[id='carConfiguration.chassisNumber']")[0]?.value.trim();
 
-                if (outputEl) outputEl.textContent = '';
+                console.log(numberPlateInput, chassisNumberInput)
 
-                return {
-                    numberPlateNumber: numberPlateInput?.value.trim(),
-                    chassisNumber: chassisNumberInput?.value.trim()
-                };
+                return (numberPlateInput || chassisNumberInput) ? {
+                    numberPlateNumber: numberPlateInput,
+                    chassisNumber: chassisNumberInput
+                } : null
             }
         });
 
-        return result?.result as IExtractVehicleDataResult || {};
+        return result?.result || null;
     },
 
     async openMobiformWindow(): Promise<chrome.windows.Window> {
