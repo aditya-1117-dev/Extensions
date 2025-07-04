@@ -1,14 +1,5 @@
 import type {IMessages, IPageSelectors} from "../types/content.ts";
 
-export const SUPPORTED_DOMAINS: string[] = [
-    "https://app.twinntax.com/accountant-companies/overview/QEVYXFZM",
-    "https://app.dev.twinntax.com/accountant-companies/overview/QEVYXFZM",
-    "https://app.demo.twinntax.com/accountant-companies/overview/QEVYXFZM",
-    "https://app.staging.twinntax.com/accountant-companies/overview/QEVYXFZM",
-    "https://app.dev.twinntax.com/accountant-companies/overview/QEVYXFZM",
-    "http://localhost:5173/"
-];
-
 export const pageSelectors: IPageSelectors = {
     progressBarSelector: "[id*=\"mxui_widget_Progress\"]",
     vehiclePlateNumberAndChassisNumberRadioButtonSelector: "[id*=\"_MyVehicleMyPlate.radioButtons\"] > div.radio",
