@@ -56,6 +56,7 @@ const ScrapCarDetailsButton: React.FC = () => {
             const newWindow = await ChromeService.openMobiformWindow();
 
             if (newWindow.tabs?.[0]?.id) {
+                await ChromeService.sendRuntimeMessage("saveMobiformTabId", {mobiformTabId: newWindow.tabs[0].id})
                 await ChromeService.injectScript(newWindow.tabs[0].id, "./chooseLanguage.js");
             }
 

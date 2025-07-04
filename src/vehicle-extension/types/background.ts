@@ -17,6 +17,7 @@ export interface IChromeMessage {
 
 export type TMessage =
     | 'init'
+    | 'saveMobiformTabId'
     | 'vehicleDataFromTwinntax'
     | 'getVehicleNumber'
     | 'storeData'

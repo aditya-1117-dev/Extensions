@@ -1,4 +1,4 @@
-import { MOBIFORMS_URL } from "../utils/constants.ts";
+import {MOBIFORMS_URL} from "../utils/constants.ts";
 
 interface IExtractVehicleDataResult {
     numberPlateNumber: string;
@@ -7,7 +7,7 @@ interface IExtractVehicleDataResult {
 
 export const ChromeService = {
     async getActiveTab(): Promise<chrome.tabs.Tab> {
-        const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+        const [tab] = await chrome.tabs.query({active: true, currentWindow: true});
         if (!tab?.id || !tab.url) throw new Error("No active tab found");
         return tab;
     },
@@ -16,7 +16,7 @@ export const ChromeService = {
         if (!tabId) return null;
 
         const [result] = await chrome.scripting.executeScript({
-            target: { tabId },
+            target: {tabId},
             func: (): IExtractVehicleDataResult | null => {
                 const numberPlateInput = document.querySelectorAll<HTMLInputElement>("div.input-group > input[id='carConfiguration.numberPlate']")[0]?.value.trim();
                 const chassisNumberInput = document.querySelectorAll<HTMLInputElement>("div.input-group > input[id='carConfiguration.chassisNumber']")[0]?.value.trim();
@@ -44,7 +44,7 @@ export const ChromeService = {
 
     async injectScript(tabId: number, path: string): Promise<void> {
         await chrome.scripting.executeScript({
-            target: { tabId },
+            target: {tabId},
             files: [path]
         });
     },
@@ -55,10 +55,11 @@ export const ChromeService = {
 
     async sendRuntimeMessage<T = any>(type: string, payload?: any): Promise<T> {
         try {
-            return await chrome.runtime.sendMessage({ type, ...payload });
+            return await chrome.runtime.sendMessage({type, ...payload});
         } catch (error) {
             console.log(`Failed to send message: ${type}`, error);
-            throw error;
+            await chrome.runtime.sendMessage({type: "closeTab", ...payload});
+            await chrome.runtime.sendMessage({type: "showAlertInTabId", alertMessage: "Something wrong happened. Please try again later...", ...payload});
         }
     }
 };

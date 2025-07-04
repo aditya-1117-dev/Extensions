@@ -41,8 +41,11 @@ export class BackgroundService {
         chrome.runtime.onMessage.addListener(this.handleRuntimeMessage.bind(this));
     }
 
-    private async executeScriptAfterPageRefresh(tabId: number, info: chrome.tabs.TabChangeInfo) {
+    private assignMobiformTabId(tabId) {
         this.state.mobiformTabId = tabId;
+    }
+
+    private async executeScriptAfterPageRefresh(tabId: number, info: chrome.tabs.TabChangeInfo) {
         if (info.status !== 'complete') return;
 
         if (this.state.languageChangePageRefresh) {
@@ -90,7 +93,7 @@ export class BackgroundService {
                 func: (selector, result) => {
 
                     const element = document.querySelector<HTMLInputElement>(selector);
-                    if(!element) return 0;
+                    if (!element) return 0;
 
                     const nativeInputValueSetter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, "value")?.set;
                     nativeInputValueSetter?.call(element, result);
@@ -99,7 +102,7 @@ export class BackgroundService {
                     element.dispatchEvent(new Event("change", {bubbles: true}));
                     return 1;
                 },
-                args: [pageSelectors.dateSelector,response]
+                args: [pageSelectors.dateSelector, response]
             });
 
             return res.result;
@@ -108,7 +111,7 @@ export class BackgroundService {
         }
     }
 
-    private async showAlertInSpecificTabId(message: string, tabId: number) {
+    private async showAlertInSpecificTabId(message: string, tabId: number | null = this.state.twinntaxTabId) {
         if (!tabId) return;
 
         try {
@@ -160,6 +163,10 @@ export class BackgroundService {
         switch (request.type as TMessage) {
             case "init":
                 this.initBackground();
+                break;
+
+            case "saveMobiformTabId":
+                this.assignMobiformTabId(request.mobiformTabId);
                 break;
 
             case "vehicleDataFromTwinntax":
@@ -232,7 +239,7 @@ export class BackgroundService {
         await ChromeTabUtils.activateTab(this.state.twinntaxTabId);
 
         if (this.state.vehicleDataFromMobiformWebsite) {
-            if(!await this.showResultInTwinntaxSite(this.state.vehicleDataFromMobiformWebsite)){
+            if (!await this.showResultInTwinntaxSite(this.state.vehicleDataFromMobiformWebsite)) {
                 await this.showAlertInSpecificTabId("datepicker is not found in twinntax site", this.state.twinntaxTabId);
             }
         } else {
@@ -252,4 +259,4 @@ export class BackgroundService {
     private handleUnknownMessage(request: IChromeMessage) {
         console.log('Unknown message type received', request);
     }
-};
+}
