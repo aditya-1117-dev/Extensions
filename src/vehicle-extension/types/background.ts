@@ -1,12 +1,13 @@
-import type {IVehicleData} from "./chrome";
+import type {IVehicleData} from "./chrome.ts";
 
 export interface IBackgroundState {
     vehicleDataFromTwinntax: IVehicleData | null;
     twinntaxTabId: number | null;
-    vehicleDataFromMobiformWebsite: any;
+    vehicleDataFromMobiformWebsite: string;
     pageRefresh: boolean;
     mobiformTabId: number | null;
     languageChangePageRefresh: boolean;
+    alreadyHadPageRefresh: boolean;
 }
 
 export interface IChromeMessage {
@@ -16,6 +17,7 @@ export interface IChromeMessage {
 
 export type TMessage =
     | 'init'
+    | 'saveMobiformTabId'
     | 'vehicleDataFromTwinntax'
     | 'getVehicleNumber'
     | 'storeData'
@@ -26,4 +28,5 @@ export type TMessage =
     | 'checkPageRefreshOrNot'
     | 'changeLanguage'
     | 'checkLanguageChangeOrNot'
-    | 'noChangeInLanguage';
+    | 'noChangeInLanguage'
+    | 'showAlertInTabId';

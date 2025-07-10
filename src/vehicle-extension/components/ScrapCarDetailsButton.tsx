@@ -1,8 +1,8 @@
 import React, {useEffect, useState} from "react";
 import Button from "./Button.tsx";
 import {useLanguage} from "../hooks/useLanguage.tsx";
-import {ChromeService} from "../services/chrome.service.ts";
-import {DomainUtils} from "../utils/domain.utils.ts";
+import {ChromeService} from "../services/chrome.ts";
+import {DomainUtils} from "../utils/domain.ts";
 import UnsupportedDomainMessage from "./UnsupportedDomainMessage.tsx";
 
 const ScrapCarDetailsButton: React.FC = () => {
@@ -33,10 +33,16 @@ const ScrapCarDetailsButton: React.FC = () => {
 
             const vehicleData = await ChromeService.extractVehicleData(tab.id);
 
-            if (!vehicleData || Object.keys(vehicleData).length === 0) {
-                console.log('No vehicle data found');
+            if (!vehicleData || (!vehicleData?.numberPlateNumber && !vehicleData?.chassisNumber) || Object.keys(vehicleData).length === 0) {
+                console.log('No vehicle data found', vehicleData);
+                await ChromeService.sendRuntimeMessage("showAlertInTabId", {
+                    alertMessage: "No vehicle data found",
+                    tabId: tab.id
+                })
                 return;
             }
+
+            console.log(vehicleData)
 
             await ChromeService.clearStorage();
 
@@ -50,6 +56,7 @@ const ScrapCarDetailsButton: React.FC = () => {
             const newWindow = await ChromeService.openMobiformWindow();
 
             if (newWindow.tabs?.[0]?.id) {
+                await ChromeService.sendRuntimeMessage("saveMobiformTabId", {mobiformTabId: newWindow.tabs[0].id})
                 await ChromeService.injectScript(newWindow.tabs[0].id, "./chooseLanguage.js");
             }
 

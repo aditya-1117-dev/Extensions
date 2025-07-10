@@ -1,6 +1,7 @@
-import {contentService} from "../../services/content.service.ts";
+import {ContentService} from "../../services/content.ts";
 
 console.log("hii")
+const contentService = new ContentService()
 
 contentService.initialize()
     .catch(error => {

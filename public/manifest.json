@@ -18,18 +18,8 @@
     "service_worker": "serviceWorker.js",
     "type": "module"
   },
-  "content_scripts": [
-    {
-      "matches": [
-        "https://mobiforms.mobilit.fgov.be/link/myvehiclemyplate",
-        "https://*.twinntax.com:*/accountant-companies/overview/QEVYXFZM",
-        "http://localhost:5173/"
-      ],
-      "js": ["content.js", "chooseLanguage.js"]
-    }
-  ],
   "host_permissions": [
-    "https://mobiforms.mobilit.fgov.be/link/myvehiclemyplate",
+    "https://myvehiclemyplate.mobilit.fgov.be/*",
     "https://*.twinntax.com:*/accountant-companies/overview/QEVYXFZM",
     "http://localhost:5173/"
   ],
